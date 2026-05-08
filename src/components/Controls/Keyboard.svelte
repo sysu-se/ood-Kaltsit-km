@@ -3,13 +3,18 @@
 	import { cursor } from '@sudoku/stores/cursor';
 	import { notes } from '@sudoku/stores/notes';
 	import { candidates } from '@sudoku/stores/candidates';
+	import { gameStore } from '@sudoku/stores/grid';
 
 	// TODO: Improve keyboardDisabled
 	import { keyboardDisabled } from '@sudoku/stores/keyboard';
 
+	// 是否在探索模式
+	$: exploring = $gameStore ? $gameStore.isExploring() : false;
+	
 	function handleKeyButton(num) {
 		if (!$keyboardDisabled) {
 			if ($notes) {
+				// Notes 模式：添加/清除候选数（探索模式和正常模式行为相同）
 				if (num === 0) {
 					candidates.clear($cursor);
 				} else {
@@ -17,11 +22,17 @@
 				}
 				userGrid.set($cursor, 0);
 			} else {
+				// 正常输入模式
 				if ($candidates.hasOwnProperty($cursor.x + ',' + $cursor.y)) {
 					candidates.clear($cursor);
 				}
-
-				userGrid.set($cursor, num);
+	
+				// 关键：探索模式下用 exploreGuess，正常模式用 set
+				if (exploring) {
+					userGrid.exploreGuess($cursor, num);
+				} else {
+					userGrid.set($cursor, num);
+				}
 			}
 		}
 	}
